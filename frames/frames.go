@@ -1,4 +1,4 @@
-package teleinfo
+package frames
 
 import (
 	"github.com/tarm/serial"
