@@ -3,6 +3,7 @@ package frames
 import (
 	"github.com/tarm/serial"
 	"log"
+	"fmt"
 )
 
 type Info struct {
@@ -18,8 +19,8 @@ type Info struct {
 	cks     int
 }
 
-func (i *Info) init(device string) error {
-	c := &serial.Config{Name: device, Baud: 4200}
+func (i *Info) Init(device string) error {
+	c := &serial.Config{Name: device, Baud: 1200}
 	port, err := serial.OpenPort(c)
 	if err != nil {
 		log.Print(err)
@@ -57,9 +58,13 @@ func (i *Info) decodeSeparator(b byte) {
 		i.current = ""
 		i.state = "CK"
 	case "CK":
-		i.ck = i.current
-		i.current = ""
-		i.state = "KEY"
+		if b == ' ' {
+			i.current = i.current + string(b)
+		} else {
+			i.ck = i.current
+			i.current = ""
+			i.state = "KEY"
+		}
 	}
 }
 
@@ -73,7 +78,7 @@ func (i *Info) decodeField(b byte) {
 	}
 }
 
-func (i *Info) Decode(b byte) {
+func (i *Info) decode(b byte) {
 	switch b {
 	case '\002':
 		i.state = "KEY"
@@ -84,11 +89,14 @@ func (i *Info) Decode(b byte) {
 		i.cks = 0
 		i.state = "KEY"
 	case '\n':
+	case '\r':
 		i.decodeSeparator(b)
 		// compare checksum
 		if i.ck == string((i.cks&0x3F)+0x20) {
 			i.fieldcb(i.key, i.value)
 			i.frame[i.key] = i.value
+		} else {
+			fmt.Printf("Wrong checksum %s/%s #%s#%s#\n", i.key, i.value, i.ck, string((i.cks&0x3F)+0x20))
 		}
 		i.cks = 0
 		i.state = "KEY"
@@ -96,5 +104,19 @@ func (i *Info) Decode(b byte) {
 		i.decodeSeparator(b)
 	default:
 		i.decodeField(b)
+	}
+}
+
+func (i *Info) Run() {
+	buf := make([]byte, 8)
+	for {
+		n, err := i.port.Read(buf)
+		if err != nil {
+			println(err)
+		} else {
+			for c := 0; c < n; c++ {
+				i.decode(buf[c])
+			}
+		}
 	}
 }

@@ -6,7 +6,7 @@ import (
 
 func TestFirst(t *testing.T) {
 	var ti Info
-	ti.init("/dev/null")
+	ti.Init("/dev/null")
 }
 
 func TestDecode(t *testing.T) {
@@ -25,13 +25,13 @@ func TestDecode(t *testing.T) {
 		gotframe = data
 	}
 	var ti Info
-	ti.init("/dev/null")
+	ti.Init("/dev/null")
 	ti.SetFieldCB(cb)
 	ti.SetFrameCB(framecb)
 
 	frame := "\002MOTDETAT 000000 B\nADCO 020828337598 N\nOPTARIF BBR( S\nISOUSC 45 ?\nBBRHCJB 012133887 >\nBBRHPJB 038554302 H\nBBRHCJW 002903317 K\nBBRHPJW 003800290 U\nBBRHCJR 001504374 E\nBBRHPJR 000907447 Y\nPTEC HPJB P\nDEMAIN BLEU V\nIINST 004 [\nIMAX 049 L\nPAPP 01100 #\nHHPHC Y D\n\003"
 	for i := 0; i < len(frame); i++ {
-		ti.Decode(frame[i])
+		ti.decode(frame[i])
 	}
 	for code, value := range expected {
 		if got[code] != value {
