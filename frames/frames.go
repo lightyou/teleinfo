@@ -3,7 +3,6 @@ package frames
 import (
 	"github.com/tarm/serial"
 	"log"
-	"fmt"
 )
 
 type Info struct {
@@ -88,6 +87,7 @@ func (i *Info) decode(b byte) {
 		i.frame = map[string]string{}
 		i.cks = 0
 		i.state = "KEY"
+		//log.Printf("debug: New frame")
 	case '\n':
 	case '\r':
 		i.decodeSeparator(b)
@@ -95,8 +95,9 @@ func (i *Info) decode(b byte) {
 		if i.ck == string((i.cks&0x3F)+0x20) {
 			i.fieldcb(i.key, i.value)
 			i.frame[i.key] = i.value
+			//log.Printf("debug: New field %s => %s\n", i.key, i.value)
 		} else {
-			fmt.Printf("Wrong checksum %s/%s #%s#%s#\n", i.key, i.value, i.ck, string((i.cks&0x3F)+0x20))
+			log.Printf("warning: Wrong checksum %s/%s #%s#%s#\n", i.key, i.value, i.ck, string((i.cks&0x3F)+0x20))
 		}
 		i.cks = 0
 		i.state = "KEY"

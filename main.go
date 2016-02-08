@@ -1,68 +1,108 @@
 package main
 
 import (
+	_ "fmt"
 	_ "log"
+	"strconv"
 	"teleinfo/frames"
 	"teleinfo/store"
-	_ "fmt"
 	"time"
-	"strconv"
 )
+
+type energy struct {
+	IINST int
+	PAPP  int
+	PTEC  string
+}
+type counters struct {
+	BBRHCJB int
+	BBRHPJB int
+	BBRHCJW int
+	BBRHPJW int
+	BBRHCJR int
+	BBRHPJR int
+}
+type date struct {
+	Day   int
+	Month int
+	Year  int
+	DoW   int
+}
+type payload struct {
+	Energy energy
+	Counters counters
+	Date date
+}
 
 func onPTEC(value string) {
 	switch value[:2] {
 	case "HP":
-//		fmt.Println("Heures pleines")
+		//		fmt.Println("Heures pleines")
 	case "HC":
-//		fmt.Println("Heures creuses")
+		//		fmt.Println("Heures creuses")
 	}
 	switch value[2:4] {
 	case "JB":
-//		fmt.Println("Bleu")
+		//		fmt.Println("Bleu")
 	case "JW":
-//		fmt.Println("Blanc")
+		//		fmt.Println("Blanc")
 	case "JR":
-//		fmt.Println("Rouge")
+		//		fmt.Println("Rouge")
 	}
 }
 
 func onField(name string, value string) {
 	switch name {
-		case "PTEC":
-			onPTEC(value)
+	case "PTEC":
+		onPTEC(value)
 	}
 	//fmt.Printf("field %s => %s\n", name, value)
 }
 
-func setFieldIntValue(data map[string]int, field string, value string) {
-	intValue, err := strconv.Atoi(value)
-	if err == nil {
-		data[field] = intValue
-	}
-}
-
-
 func onFrame(data map[string]string) {
-	// Add date info
+	d := payload{}
+
+	intValue, err := strconv.Atoi(data["IINST"])
+	if err == nil {
+		d.Energy.IINST = intValue
+	}
+	intValue, err = strconv.Atoi(data["PAPP"])
+	if err == nil {
+		d.Energy.PAPP = intValue
+	}
+	d.Energy.PTEC = data["PTEC"]
+
+	intValue, err = strconv.Atoi(data["BBRHCJB"])
+	if err == nil {
+		d.Counters.BBRHCJB = intValue
+	}
+	intValue, err = strconv.Atoi(data["BBRHPJB"])
+	if err == nil {
+		d.Counters.BBRHPJB = intValue
+	}
+	intValue, err = strconv.Atoi(data["BBRHCJW"])
+	if err == nil {
+		d.Counters.BBRHCJW = intValue
+	}
+	intValue, err = strconv.Atoi(data["BBRHPJW"])
+	if err == nil {
+		d.Counters.BBRHPJW = intValue
+	}
+	intValue, err = strconv.Atoi(data["BBRHCJR"])
+	if err == nil {
+		d.Counters.BBRHCJR = intValue
+	}
+	intValue, err = strconv.Atoi(data["BBRHPJR"])
+	if err == nil {
+		d.Counters.BBRHPJR = intValue
+	}
+
 	t := time.Now()
-	d := map[string]map[string]int{}
-	d["Energy"] = make(map[string]int)
-	setFieldIntValue(d["Energy"], "IINST", data["IINST"])
-	setFieldIntValue(d["Energy"], "PAPP", data["PAPP"])
+	d.Date.Day = t.Day()
+	d.Date.Month = int(t.Month())
+	d.Date.Year = t.Year()
+	d.Date.DoW = int(t.Weekday())
 
-	d["Counters"] = make(map[string]int)
-	setFieldIntValue(d["Counters"], "BBRHCJB", data["BBRHCJB"])
-	setFieldIntValue(d["Counters"], "BBRHPJB", data["BBRHPJB"])
-	setFieldIntValue(d["Counters"], "BBRHCJW", data["BBRHCJW"])
-	setFieldIntValue(d["Counters"], "BBRHPJW", data["BBRHPJW"])
-	setFieldIntValue(d["Counters"], "BBRHCJR", data["BBRHCJR"])
-	setFieldIntValue(d["Counters"], "BBRHPJR", data["BBRHPJR"])
-
-	d["Date"] = make(map[string]int)
-	d["Date"]["Day"] = t.Day()
-	d["Date"]["Month"] = int(t.Month())
-	d["Date"]["Year"] = t.Year()
-	d["Date"]["DoW"] = int(t.Weekday())
 	store.Store("http://192.168.1.4:3133/teleinfo", d)
 }
 
